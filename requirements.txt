@@ -1,0 +1,11 @@
+openai
+elevenlabs
+sounddevice
+numpy
+python-dotenv
+fastapi
+uvicorn
+streamlit
+audio-recorder-streamlit
+requests
+python-multipart

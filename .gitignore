@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor configs and workspace
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Python dotenv
+.env
+
+# Logs
+*.log
+
+# Test output
+htmlcov/
+coverage.*
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+
+# Streamlit cache
+.streamlit/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.bak
+
+# Audio files
+*.mp3
+*.wav
