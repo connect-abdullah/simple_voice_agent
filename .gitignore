@@ -51,3 +51,6 @@ coverage.*
 # Audio files
 *.mp3
 *.wav
+
+# Model cache (auto-generated, too large for git)
+models/
