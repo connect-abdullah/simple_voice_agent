@@ -9,3 +9,6 @@ streamlit
 audio-recorder-streamlit
 requests
 python-multipart
+faster_whisper
+websockets
+pyaudio
