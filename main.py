@@ -3,7 +3,6 @@ from modules.record import record_audio, save_temp_wav
 from modules.speechToText import transcribe_audio
 from modules.llm import gpt_stream_to_queue
 from modules.simple_tts import simple_elevenlabs_streamer, openai_tts_streamer
-from config import OPENAI_API_KEY
 
 async def main():
     print("🎧 Voice Agent Ready (Streaming Mode). Say 'exit' to quit.\n")

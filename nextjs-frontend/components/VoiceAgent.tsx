@@ -214,6 +214,8 @@ export default function VoiceAgent() {
           
           if (audioBase64) {
             try {
+              console.log(`🔊 Received audio chunk: ${audioBase64.length} bytes (base64)`);
+              
               // Decode base64 to binary
               const binaryString = atob(audioBase64);
               const bytes = new Uint8Array(binaryString.length);
@@ -222,14 +224,18 @@ export default function VoiceAgent() {
               }
               
               const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+              console.log(`🔊 Audio blob created: ${audioBlob.size} bytes`);
               audioQueueRef.current.push(audioBlob);
               
               if (!isPlayingAudioRef.current) {
+                console.log('🔊 Starting audio playback');
                 playNextAudio();
               }
             } catch (decodeError) {
               console.error('Error decoding audio:', decodeError);
             }
+          } else {
+            console.warn('⚠️ Received audio_chunk without audio data');
           }
         } else if (data.type === 'stream_complete') {
           setStatus('✅ Ready to talk');
@@ -259,32 +265,43 @@ export default function VoiceAgent() {
   const playNextAudio = async () => {
     if (audioQueueRef.current.length === 0) {
       isPlayingAudioRef.current = false;
+      console.log('🔊 Audio queue empty, playback stopped');
       return;
     }
 
     isPlayingAudioRef.current = true;
     const audioBlob = audioQueueRef.current.shift()!;
+    console.log(`🔊 Playing audio blob: ${audioBlob.size} bytes, queue length: ${audioQueueRef.current.length}`);
+    
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     currentAudioRef.current = audio;
 
     audio.onended = () => {
+      console.log('🔊 Audio chunk finished');
       URL.revokeObjectURL(audioUrl);
       currentAudioRef.current = null;
       playNextAudio();
     };
 
     audio.onerror = (error) => {
-      console.error('Audio playback error:', error);
+      console.error('❌ Audio playback error:', error);
       URL.revokeObjectURL(audioUrl);
       currentAudioRef.current = null;
       playNextAudio();
     };
 
     try {
+      console.log('🔊 Attempting to play audio...');
       await audio.play();
+      console.log('✅ Audio playing successfully');
     } catch (error) {
-      console.error('Failed to play audio:', error);
+      console.error('❌ Failed to play audio:', error);
+      // Try to handle autoplay policy
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.warn('⚠️ Autoplay blocked - user interaction required');
+        setStatus('🔇 Click to enable audio');
+      }
       URL.revokeObjectURL(audioUrl);
       currentAudioRef.current = null;
       playNextAudio();

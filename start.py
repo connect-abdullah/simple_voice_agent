@@ -17,8 +17,7 @@ def start_backend():
     print("🚀 Starting FastAPI backend...")
     backend_process = subprocess.Popen([
         sys.executable, "backend/main.py"
-    ], cwd=os.path.dirname(os.path.abspath(__file__)),
-    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    ], cwd=os.path.dirname(os.path.abspath(__file__)))
     return backend_process
 
 def start_frontend():
@@ -50,7 +49,6 @@ def check_dependencies():
         import websockets
         import openai
         import elevenlabs
-        import faster_whisper
         print("✅ All dependencies are installed")
         return True
     except ImportError as e:
@@ -185,23 +183,17 @@ def main():
     
     # Start frontend
     frontend = start_frontend()
-    time.sleep(3)  # Give frontend time to start
+    time.sleep(3)  # Give frontend time to start2
     
     print("\n🎉 Voice Agent is ready!")
     print("=" * 40)
     print("📡 Backend API: http://localhost:8000")
     print("🌐 Frontend UI: http://localhost:3000")
-    print("🔌 WebSocket: ws://localhost:8000/stream")
-    print("\n🎯 Features:")
-    print("  • Voice-only interface")
-    print("  • Real-time AI streaming responses")
-    print("  • ElevenLabs voice selection")
-    print("  • Whisper speech recognition")
-    print("  • Sequential audio playback")
     print("\n⌨️  Commands:")
     print("  • Press Ctrl+C to stop all services")
     print("  • Open http://localhost:3000 in your browser")
-    print("  • Run tests with: python -m pytest tests/")
+    print("\n📋 Backend logs will appear below:")
+    print("-" * 40)
     
     def signal_handler(sig, frame):
         print("\n\n🛑 Shutting down services...")

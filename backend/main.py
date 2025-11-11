@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.speechToText import transcribe_audio
 from modules.llm import gpt_stream_to_queue
-from modules.simple_tts import simple_elevenlabs_streamer, openai_tts_streamer, simple_elevenlabs_streamer_websocket, openai_tts_streamer_websocket
+from modules.simple_tts import simple_elevenlabs_streamer_websocket
 from config import FREE_VOICES, DEFAULT_VOICE_ID, get_voice_id
 
 app = FastAPI(title="Voice Agent API", version="1.0.0")
@@ -157,26 +157,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Start streaming tasks
                 gpt_task = asyncio.create_task(gpt_stream_with_dual_output(user_text, tts_queue, websocket_queue))
                 
-                # Start TTS task that sends audio to WebSocket
-                async def tts_with_websocket(tts_queue, websocket, voice_id):
-                    """Generate TTS and send audio chunks via WebSocket"""
-                    # Try ElevenLabs first with selected voice, fallback to OpenAI TTS
-                    try:
-                        print(f"🔊 Starting ElevenLabs TTS with voice: {voice_id}...")
-                        await simple_elevenlabs_streamer_websocket(tts_queue, websocket, voice_id)
-                        print("✅ ElevenLabs TTS completed")
-                    except Exception as e:
-                        print(f"⚠️  ElevenLabs failed, using OpenAI TTS: {e}")
-                        try:
-                            print("🔊 Starting OpenAI TTS...")
-                            await openai_tts_streamer_websocket(tts_queue, websocket)
-                            print("✅ OpenAI TTS completed")
-                        except Exception as e2:
-                            print(f"❌ OpenAI TTS also failed: {e2}")
-                            import traceback
-                            traceback.print_exc()
-                
-                tts_task = asyncio.create_task(tts_with_websocket(tts_queue, websocket, voice_id))
+                # Start TTS task
+                tts_task = asyncio.create_task(
+                    simple_elevenlabs_streamer_websocket(tts_queue, websocket, voice_id)
+                )
                 
                 # Stream text chunks to WebSocket
                 async def stream_to_websocket():
