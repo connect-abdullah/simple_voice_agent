@@ -1,5 +1,4 @@
 import sounddevice as sd
-import numpy as np
 import wave
 import tempfile
 from config import SAMPLE_RATE

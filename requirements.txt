@@ -12,3 +12,4 @@ python-multipart
 faster_whisper
 websockets
 pyaudio
+pytest

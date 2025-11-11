@@ -38,7 +38,16 @@ async def root():
 @app.get("/voices")
 async def get_voices():
     """Get available voices"""
-    return {"voices": FREE_VOICES}
+    # Convert dictionary to array format for frontend
+    voices_array = [
+        {
+            "voice_id": voice_info["id"],
+            "name": voice_info["name"],
+            "description": voice_info.get("description", "")
+        }
+        for voice_info in FREE_VOICES.values()
+    ]
+    return {"voices": voices_array}
 
 @app.post("/transcribe")
 async def transcribe_audio_endpoint(audio: UploadFile = File(...)):
@@ -53,10 +62,31 @@ async def transcribe_audio_endpoint(audio: UploadFile = File(...)):
         tmp_path = tmp_file.name
     
     try:
-        # Transcribe audio
-        text = transcribe_audio(tmp_path)
+        # Transcribe audio with timeout
+        file_size = os.path.getsize(tmp_path)
+        print(f"🎤 Transcribing audio file: {tmp_path} ({file_size} bytes)")
+        
+        # Check if file is too small
+        if file_size < 1000:
+            print("⚠️  Audio file too small, likely empty")
+            return {"text": ""}
+        
+        # Run transcription in executor with timeout
+        loop = asyncio.get_event_loop()
+        text = await asyncio.wait_for(
+            loop.run_in_executor(None, transcribe_audio, tmp_path),
+            timeout=50.0  # 50 second timeout
+        )
+        
+        print(f"✅ Transcription complete: {text}")
         return {"text": text}
+    except asyncio.TimeoutError:
+        print("⏱️ Transcription timeout")
+        raise HTTPException(status_code=504, detail="Transcription timeout - try again")
     except Exception as e:
+        print(f"❌ Transcription error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
     finally:
         # Clean up temporary file

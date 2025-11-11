@@ -22,11 +22,23 @@ def start_backend():
     return backend_process
 
 def start_frontend():
-    """Start Web frontend with voice interface"""
-    print("🌐 Starting Web frontend...")
+    """Start Next.js frontend with voice interface"""
+    print("🌐 Starting Next.js frontend...")
+    frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "nextjs-frontend")
+    
+    # Check if Next.js frontend exists
+    if not os.path.exists(frontend_dir):
+        print("⚠️  Next.js frontend not found, falling back to simple frontend...")
+        frontend_process = subprocess.Popen([
+            sys.executable, "web-frontend/server.py"
+        ], cwd=os.path.dirname(os.path.abspath(__file__)),
+        stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        return frontend_process
+    
+    # Start Next.js dev server
     frontend_process = subprocess.Popen([
-        sys.executable, "web-frontend/server.py"
-    ], cwd=os.path.dirname(os.path.abspath(__file__)),
+        "npm", "run", "dev"
+    ], cwd=frontend_dir,
     stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     return frontend_process
 
@@ -63,6 +75,50 @@ def check_environment():
     
     print("✅ Environment variables configured")
     return True
+
+def cleanup_port(port):
+    """Kill any process using the specified port"""
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            pids = result.stdout.strip().split('\n')
+            for pid in pids:
+                try:
+                    pid_int = int(pid.strip())
+                    # Try graceful termination first
+                    try:
+                        os.kill(pid_int, signal.SIGTERM)
+                        time.sleep(0.5)  # Give process time to terminate
+                        # Check if process still exists and force kill if needed
+                        os.kill(pid_int, 0)  # This will raise ProcessLookupError if process is gone
+                        os.kill(pid_int, signal.SIGKILL)  # Force kill if still running
+                        time.sleep(0.2)
+                    except ProcessLookupError:
+                        pass  # Process already terminated, which is fine
+                    print(f"🔧 Freed port {port} (killed process {pid_int})")
+                except (ValueError, ProcessLookupError, PermissionError):
+                    pass
+            return True
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return False
+
+def cleanup_ports():
+    """Clean up ports 8000 and 3000 before starting services"""
+    print("🧹 Checking for processes using required ports...")
+    backend_port_freed = cleanup_port(8000)
+    frontend_port_freed = cleanup_port(3000)
+    
+    if backend_port_freed or frontend_port_freed:
+        time.sleep(1)  # Give ports time to be released
+        print("✅ Ports are ready")
+    else:
+        print("✅ Ports are available")
 
 def wait_for_backend(backend_process, max_attempts=30):
     """Wait for backend to be ready"""
@@ -113,6 +169,10 @@ def main():
     # Check environment
     if not check_environment():
         sys.exit(1)
+    
+    # Clean up ports before starting
+    print("\n🧹 Preparing ports...")
+    cleanup_ports()
     
     # Start backend
     print("\n🔧 Starting services...")
