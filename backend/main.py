@@ -12,10 +12,9 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.speechToText import transcribe_audio
-from modules.llm import gpt_stream_to_queue
+from modules.llm import gpt_stream_to_queues
 from modules.simple_tts import simple_elevenlabs_streamer_websocket
-from config import FREE_VOICES, DEFAULT_VOICE_ID, get_voice_id
-
+from config import FREE_VOICES, DEFAULT_VOICE_ID
 app = FastAPI(title="Voice Agent API", version="1.0.0")
 
 # Add CORS middleware
@@ -112,50 +111,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 tts_queue = asyncio.Queue()
                 websocket_queue = asyncio.Queue()
                 
-                # Create a modified streaming function that sends to both queues
-                async def gpt_stream_with_dual_output(user_input: str, tts_queue: asyncio.Queue, ws_queue: asyncio.Queue):
-                    """Stream GPT response to both TTS queue and WebSocket queue"""
-                    import concurrent.futures
-                    from openai import OpenAI
-                    from config import OPENAI_API_KEY
-                    
-                    client = OpenAI(api_key=OPENAI_API_KEY)
-                    
-                    def create_stream():
-                        return client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[{"role": "user", "content": user_input}],
-                            stream=True
-                        )
-                    
-                    loop = asyncio.get_event_loop()
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        stream = await loop.run_in_executor(executor, create_stream)
-                        
-                        def get_next_chunk():
-                            try:
-                                return next(stream)
-                            except StopIteration:
-                                return None
-                        
-                        while True:
-                            chunk = await loop.run_in_executor(executor, get_next_chunk)
-                            if chunk is None:
-                                break
-                                
-                            if chunk.choices[0].delta.content is not None:
-                                content = chunk.choices[0].delta.content
-                                print(content, end="", flush=True)
-                                # Send to both queues independently
-                                await tts_queue.put(content)
-                                await ws_queue.put(content)
-                    
-                    # Signal end to both queues
-                    await tts_queue.put(None)
-                    await ws_queue.put(None)
-                
                 # Start streaming tasks
-                gpt_task = asyncio.create_task(gpt_stream_with_dual_output(user_text, tts_queue, websocket_queue))
+                gpt_task = asyncio.create_task(
+                    gpt_stream_to_queues(user_text, [tts_queue, websocket_queue])
+                )
                 
                 # Start TTS task
                 tts_task = asyncio.create_task(

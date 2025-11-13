@@ -13,7 +13,7 @@ async def simple_elevenlabs_streamer_websocket(queue: asyncio.Queue, websocket, 
     print(f"🔊 Starting ElevenLabs TTS with voice: {voice_id}")
     
     collected_text = ""
-    chunk_size = 50
+    chunk_size = 55
     
     while True:
         text_chunk = await queue.get()

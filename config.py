@@ -28,21 +28,3 @@ FREE_VOICES = {
 DEFAULT_VOICE = "Rachel"  # Default fallback voice name
 DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"  # Rachel's voice ID
 SAMPLE_RATE = 16000
-
-def get_voice_id_by_name(name):
-    """Get voice ID by voice name"""
-    for voice_info in FREE_VOICES.values():
-        if voice_info["name"] == name:
-            return voice_info["id"]
-    return DEFAULT_VOICE_ID  # Fallback to Rachel
-
-def get_voice_id(voice_identifier):
-    """Get voice ID from either a name or ID"""
-    # Check if it's already an ID (check if it exists in any voice)
-    for voice_info in FREE_VOICES.values():
-        if voice_info["id"] == voice_identifier:
-            return voice_identifier
-        if voice_info["name"] == voice_identifier:
-            return voice_info["id"]
-    # If not found, return default
-    return DEFAULT_VOICE_ID
